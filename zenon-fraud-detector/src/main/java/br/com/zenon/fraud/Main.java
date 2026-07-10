@@ -1,28 +1,21 @@
 package br.com.zenon.fraud;
 
 import br.com.zenon.fraud.models.Transaction;
-import br.com.zenon.fraud.models.TransactionCustomer;
-import br.com.zenon.fraud.models.TransactionType;
+import br.com.zenon.fraud.services.TransactionIngestor;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
+        var tIni = System.currentTimeMillis();
+        TransactionIngestor transactionIngestor = new TransactionIngestor();
+        List<Transaction> transactions = transactionIngestor.getTransactions("data/transactions.csv");
+        var tFin = System.currentTimeMillis();
 
-        List<Transaction> transactions = new ArrayList<>();
+        IO.println( "Time to ingest transactions: " + (tFin - tIni) + "ms");
 
-        transactions.add(new Transaction(1, TransactionType.PAYMENT, new BigDecimal("9839.64"),
-                new TransactionCustomer("C1231006815", new BigDecimal("170136.0"), new BigDecimal("160296.36")),
-                new TransactionCustomer("M1979787155", new BigDecimal("0.0"), new BigDecimal("0")),
-                false, false));
-
-        transactions.add(new Transaction(743, TransactionType.CASH_OUT, new BigDecimal("850002.52"),
-                new TransactionCustomer("C1280323807", new BigDecimal("850002.52"), new BigDecimal("0.0")),
-                new TransactionCustomer("C873221189", new BigDecimal("6510099.11"), new BigDecimal("7360101.63")),
-                true, false));
-
-        transactions.forEach(System.out::println);
+        transactions.stream()
+                .limit(10)
+                .forEach(IO::println);
     }
 }
