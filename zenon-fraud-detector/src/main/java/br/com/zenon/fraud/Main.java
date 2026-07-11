@@ -17,5 +17,7 @@ public class Main {
         transactions.stream()
                 .limit(10)
                 .forEach(IO::println);
+
+        IO.println("total transactions: " + transactions.size());
     }
 }
