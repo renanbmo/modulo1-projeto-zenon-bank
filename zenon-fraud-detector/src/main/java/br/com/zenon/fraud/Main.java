@@ -9,7 +9,7 @@ public class Main {
     public static void main(String[] args) throws Exception {
         var tIni = System.currentTimeMillis();
         TransactionIngestor transactionIngestor = new TransactionIngestor();
-        List<Transaction> transactions = transactionIngestor.getTransactions("data/transactions.csv");
+        List<Transaction> transactions = transactionIngestor.getTransactions("data/transactions_with_bad_data.cvs");
         var tFin = System.currentTimeMillis();
 
         IO.println( "Time to ingest transactions: " + (tFin - tIni) + "ms");

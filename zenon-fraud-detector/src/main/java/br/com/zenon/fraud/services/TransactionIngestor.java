@@ -7,10 +7,10 @@ import br.com.zenon.fraud.models.TransactionType;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 public class TransactionIngestor {
     public static final int STEP_INDEX = 0;
@@ -34,32 +34,85 @@ public class TransactionIngestor {
                 .skip(1) // skip header
                 .limit(1000)
                 .map(this::mapToTransaction)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .toList();
     }
 
-    private Transaction mapToTransaction(String line){
+    private Optional<Transaction> mapToTransaction(String line){
         String[] fields = line.split(",");
 
-        TransactionCustomer customerOrig = new TransactionCustomer(
-                fields[NAME_ORIG_INDEX],
-                new BigDecimal(fields[OLD_BALANCE_ORIG_INDEX]),
-                new BigDecimal(fields[NEW_BALANCE_ORIG_INDEX])
-        );
+        try{
+            if(fields.length != 11)
+                throw new IllegalArgumentException("Invalid number of columns");
 
-        TransactionCustomer customerDest = new TransactionCustomer(
-                fields[NAME_DEST_INDEX],
-                new BigDecimal(fields[OLD_BALANCE_DEST_INDEX]),
-                new BigDecimal(fields[NEW_BALANCE_DEST_INDEX])
-        );
+            Arrays.stream(fields)
+                    .forEach(field -> {
+                        if(field.isBlank())
+                            throw new IllegalArgumentException("Field cannot be blank");
+                    });
 
-        return new Transaction(
-                Integer.parseInt(fields[STEP_INDEX]),
-                TransactionType.valueOf(fields[TYPE_INDEX]),
-                new BigDecimal(fields[AMOUNT_INDEX]),
-                customerOrig,
-                customerDest,
-                fields[IS_FRAUD_INDEX].equals("1"),
-                fields[IS_FLAGGED_FRAUD_INDEX].equals("1")
-                );
+            TransactionCustomer customerOrig = new TransactionCustomer(
+                    parseName(fields[NAME_ORIG_INDEX]),
+                    parseDecimal(fields[OLD_BALANCE_ORIG_INDEX], "oldBalanceOrig"),
+                    parseDecimal(fields[NEW_BALANCE_ORIG_INDEX], "newBalanceOrig")
+            );
+
+            TransactionCustomer customerDest = new TransactionCustomer(
+                    parseName(fields[NAME_DEST_INDEX]),
+                    parseDecimal(fields[OLD_BALANCE_DEST_INDEX], "oldBalanceDest"),
+                    parseDecimal(fields[NEW_BALANCE_DEST_INDEX], "newBalanceDest")
+            );
+
+            return Optional.of(new Transaction(
+                    parseStep(fields[STEP_INDEX]),
+                    TransactionType.valueOf(fields[TYPE_INDEX]),
+                    parseDecimal(fields[AMOUNT_INDEX],"Amount"),
+                    customerOrig,
+                    customerDest,
+                    fields[IS_FRAUD_INDEX].equals("1"),
+                    fields[IS_FLAGGED_FRAUD_INDEX].equals("1")
+            ));
+        } catch (Exception e) {
+            String sb = "Erro: " +
+                    line +
+                    " | " +
+                    e.getClass().getName() +
+                    ": " +
+                    e.getMessage();
+
+            System.err.println(sb);
+
+            return Optional.empty();
+        }
+    }
+
+    private int parseStep(String step) {
+        var intStep = Integer.parseInt(step);
+
+        if (intStep <= 0)
+            throw new IllegalArgumentException("Step must be positive: " + step);
+
+        return intStep;
+    }
+
+    private String parseName(String name){
+        if (name.isBlank())
+            throw new IllegalArgumentException("Name cannot be blank: " + name);
+
+        return name.trim();
+    }
+
+    private TransactionType parseType(String type){
+        return TransactionType.valueOf(type);
+    }
+
+    private BigDecimal parseDecimal(String value, String fieldName) {
+        var bigDecimal = new BigDecimal(value);
+
+        if (bigDecimal.compareTo(BigDecimal.ZERO) < 0)
+            throw new IllegalArgumentException(fieldName + " should be positive " + value);
+
+        return bigDecimal;
     }
 }
