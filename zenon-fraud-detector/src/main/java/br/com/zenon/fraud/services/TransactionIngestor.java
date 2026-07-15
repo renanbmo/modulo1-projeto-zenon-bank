@@ -27,13 +27,17 @@ public class TransactionIngestor {
     public static final int IS_FLAGGED_FRAUD_INDEX = 10;
 
     public List<Transaction> getTransactions(String filePath) throws IOException {
+        return getTransactions(filePath, Long.MAX_VALUE);
+    }
+
+    public List<Transaction> getTransactions(String filePath, long limit) throws IOException {
         var path = Paths.get(filePath);
 
         List<String> allLines = Files.readAllLines(path);
 
         return allLines.stream()
                 .skip(1) // skip header
-                .limit(1000)
+                .limit(limit)
                 .map(this::mapToTransaction)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
