@@ -7,11 +7,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class TransactionMapRepository implements TransactionRepositoryInterface {
 
-    private Map<String,Transaction> transactions;
+    private final Map<String,Transaction> transactions;
 
     public TransactionMapRepository(List<Transaction> transactions) {
         Objects.requireNonNull(transactions);
@@ -19,13 +20,12 @@ public class TransactionMapRepository implements TransactionRepositoryInterface 
         this.transactions = transactions.stream()
                 .collect(Collectors.toMap(
                         t -> t.origin().name(),
-                        t -> t
+                        Function.identity()
                 ));
     }
 
     @Override
     public Optional<Transaction> getTransactionByOriginName(String name) {
-        var transaction = transactions.get(name);
-        return Optional.of(transaction);
+        return Optional.ofNullable(transactions.getOrDefault(name, null));
     }
 }

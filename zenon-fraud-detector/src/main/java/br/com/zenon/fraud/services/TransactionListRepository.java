@@ -8,7 +8,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class TransactionListRepository implements TransactionRepositoryInterface {
-    private List<Transaction> transactions;
+    private final List<Transaction> transactions;
 
     public TransactionListRepository(List<Transaction> transactions) {
         Objects.requireNonNull(transactions);
