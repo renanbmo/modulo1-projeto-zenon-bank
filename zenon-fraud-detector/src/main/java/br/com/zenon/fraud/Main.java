@@ -2,17 +2,14 @@ package br.com.zenon.fraud;
 
 import br.com.zenon.fraud.interfaces.TransactionRepositoryInterface;
 import br.com.zenon.fraud.models.Transaction;
-import br.com.zenon.fraud.services.FraudAnalyzer;
-import br.com.zenon.fraud.services.TransactionIngestor;
-import br.com.zenon.fraud.services.TransactionListRepository;
-import br.com.zenon.fraud.services.TransactionMapRepository;
+import br.com.zenon.fraud.services.*;
 
 import java.io.IOException;
 import java.util.List;
 
 public class Main {
     public static void main(String[] args) throws Exception {
-        task06();
+        task07();
     }
 
     private static void task05() throws IOException {
@@ -64,5 +61,10 @@ public class Main {
         long finalTime = System.nanoTime();
 
         IO.println("Total time: " + (finalTime - initialTime) + "ns");
+    }
+
+    private static void task07() throws IOException {
+        TransactionReport report = new TransactionReport();
+        report.printReportFile("data/transactions.csv");
     }
 }
