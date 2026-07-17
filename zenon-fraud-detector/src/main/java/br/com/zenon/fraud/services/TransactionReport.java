@@ -11,20 +11,13 @@ import java.util.Optional;
 
 public class TransactionReport {
 
-    private class ReportStats{
-        int totalLines = 0;
-        int totalFrauds = 0;
-        BigDecimal totalAmount = BigDecimal.ZERO;
+    private record ReportStats(int totalLines, int totalFrauds, BigDecimal totalAmount){
 
-        public ReportStats(int totalLines, int totalFrauds, BigDecimal totalAmount) {
-            this.totalLines = totalLines;
-            this.totalFrauds = totalFrauds;
-            this.totalAmount = totalAmount;
-        }
+        public static final ReportStats ZERO = new ReportStats(0,0,BigDecimal.ZERO);
 
-        public ReportStats add(ReportStats before, Transaction transaction){
+        public ReportStats add(Transaction transaction){
             return new ReportStats(
-                    before.totalLines + 1,
+                    totalLines + 1,
                     totalFrauds + (transaction.isFraud() ? 1 : 0),
                     totalAmount.add(transaction.amount())
             );
@@ -42,8 +35,8 @@ public class TransactionReport {
                     .filter(Optional::isPresent)
                     .map(Optional::get)
                     .reduce(
-                            new ReportStats(0,0,BigDecimal.ZERO),
-                            (ReportStats rs, Transaction tr) -> rs.add(rs, tr),
+                            ReportStats.ZERO,
+                            ReportStats::add,
                             (s1, s2) -> s1
                     );
         }
