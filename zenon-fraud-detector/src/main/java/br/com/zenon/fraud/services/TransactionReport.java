@@ -21,7 +21,8 @@ public class TransactionReport {
         var stats = new ReportStats();
 
         try (var lines = Files.lines(path)) {
-            lines.forEach(line -> {
+            lines.skip(1)
+                    .forEach(line -> {
                 var transaction = TransactionMapper.mapToTransaction(line);
                 if (transaction.isPresent()) {
                     stats.totalLines++;
