@@ -22,4 +22,9 @@ public class TransactionListRepository implements TransactionRepositoryInterface
                 .filter(t -> t.origin().name().equals(name))
                 .findFirst();
     }
+
+    @Override
+    public boolean saveTransaction(Transaction transaction) {
+        return transactions.add(transaction);
+    }
 }

@@ -6,4 +6,5 @@ import java.util.Optional;
 
 public interface TransactionRepositoryInterface {
     Optional<Transaction> getTransactionByOriginName(String name);
+    boolean saveTransaction(Transaction transaction);
 }
