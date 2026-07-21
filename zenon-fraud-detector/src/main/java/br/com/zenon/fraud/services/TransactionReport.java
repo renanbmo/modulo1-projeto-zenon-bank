@@ -7,7 +7,11 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.NumberFormat;
+import java.util.Currency;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.ResourceBundle;
 
 public class TransactionReport {
 
@@ -24,8 +28,12 @@ public class TransactionReport {
         }
     }
 
-    public void printReportFile(String filePath) throws IOException {
+    public void printReportFile(String filePath, Locale locale) throws IOException {
         var path = Paths.get(filePath);
+        NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(locale);
+        currencyFormat.setCurrency(Currency.getInstance("USD"));
+        NumberFormat numberFormat = NumberFormat.getNumberInstance(locale);
+        ResourceBundle bundle = ResourceBundle.getBundle("report", locale);
 
         ReportStats stats;
 
@@ -41,8 +49,8 @@ public class TransactionReport {
                     );
         }
 
-        System.out.println("Total de linhas: " + stats.totalLines);
-        System.out.println("Total de fraudes: " + stats.totalFrauds);
-        System.out.println("Valor total: " + stats.totalAmount.toPlainString());
+        System.out.println(bundle.getString("total.lines") + numberFormat.format(stats.totalLines));
+        System.out.println(bundle.getString("total.frauds") + numberFormat.format(stats.totalFrauds));
+        System.out.println(bundle.getString("total.value") + currencyFormat.format(stats.totalAmount));
     }
 }

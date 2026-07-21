@@ -6,6 +6,7 @@ import br.com.zenon.fraud.services.*;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 
 public class Main {
     public static void main(String[] args) throws Exception {
@@ -65,6 +66,14 @@ public class Main {
 
     private static void task07() throws IOException {
         TransactionReport report = new TransactionReport();
-        report.printReportFile("data/transactions.csv");
+
+        IO.println("################## pt-BR ##################");
+        report.printReportFile("data/transactions.csv", Locale.of("pt", "BR"));
+
+        IO.println();
+        IO.println();
+
+        IO.println("################## US ##################");
+        report.printReportFile("data/transactions.csv", Locale.US);
     }
 }
