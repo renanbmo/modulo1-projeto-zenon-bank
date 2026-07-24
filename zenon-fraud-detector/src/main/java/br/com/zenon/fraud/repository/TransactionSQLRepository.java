@@ -37,10 +37,10 @@ public class TransactionSQLRepository implements TransactionRepositoryInterface 
                     var isFraud = rs.getBoolean("is_fraud");
                     var isFlaggedFraud = rs.getBoolean("is_flagged_fraud");
 
-                    new Transaction(step, TransactionType.valueOf(type), amount,
+                    return Optional.of(new Transaction(step, TransactionType.valueOf(type), amount,
                             new TransactionCustomer(nameOrig, oldBalanceOrig, newBalanceOrig),
                             new TransactionCustomer(nameDest, oldBalanceDest, newBalanceDest),
-                            isFraud, isFlaggedFraud);
+                            isFraud, isFlaggedFraud));
                 }
             }
 
