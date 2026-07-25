@@ -2,24 +2,28 @@ package br.com.zenon.fraud;
 
 import br.com.zenon.fraud.models.Transaction;
 import br.com.zenon.fraud.repository.TransactionSQLRepository;
+import br.com.zenon.fraud.services.EfficientTransactionIngestor;
 import br.com.zenon.fraud.services.TransactionIngestor;
 
 import java.io.IOException;
 import java.util.Optional;
 
-public class DBMain{
+public class IngestorMain {
     void main() throws IOException {
-        var ingestor = new TransactionIngestor();
-        var transactions = ingestor.getTransactions("data/transactions.csv", 10_000);
+        var ingestor = new EfficientTransactionIngestor();
         var sqlRepository = new TransactionSQLRepository();
 
         long initialTime = System.currentTimeMillis();
         IO.println("Starting ingestion...");
-//        transactions.forEach(sqlRepository::saveTransaction);
-        sqlRepository.saveTransactions(transactions);
+
+        ingestor.readAsStream(
+                "data/transactions.csv",
+                10_000,
+                t -> {
+                    sqlRepository.saveTransaction(t);
+                });
 
         long finalTime = System.currentTimeMillis();
-
         Optional<Transaction> transaction1 = sqlRepository.getTransactionByOriginName("C1231006815");
         Optional<Transaction> transaction2 = sqlRepository.getTransactionByOriginName("C12345");
 

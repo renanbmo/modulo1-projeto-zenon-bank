@@ -9,6 +9,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Optional;
 
 public class TransactionSQLRepository implements TransactionRepositoryInterface {
@@ -59,18 +60,7 @@ public class TransactionSQLRepository implements TransactionRepositoryInterface 
         try(Connection connection = getConnection();
             PreparedStatement ps = connection.prepareStatement(sql)){
 
-            var i = 1;
-            ps.setInt(i++, transaction.step());
-            ps.setString(i++, transaction.type().name());
-            ps.setBigDecimal(i++, transaction.amount());
-            ps.setString(i++, transaction.origin().name());
-            ps.setBigDecimal(i++, transaction.origin().oldBalance());
-            ps.setBigDecimal(i++, transaction.origin().newBalance());
-            ps.setString(i++, transaction.recipient().name());
-            ps.setBigDecimal(i++, transaction.recipient().oldBalance());
-            ps.setBigDecimal(i++, transaction.recipient().newBalance());
-            ps.setBoolean(i++, transaction.isFraud());
-            ps.setBoolean(i++, transaction.isFlaggedFraud());
+            mountPreparedStatement(transaction, ps);
 
             return ps.executeUpdate() > 0;
         }catch (SQLException e){
@@ -78,7 +68,54 @@ public class TransactionSQLRepository implements TransactionRepositoryInterface 
         }
     }
 
+    public boolean saveTransactions(List<Transaction> transactions) {
+        var sql = "INSERT INTO transactions.transactions\n" +
+                "(step, `type`, amount, name_orig, old_balance_orig, new_balance_orig, name_dest, old_balance_dest, new_balance_dest, is_fraud, is_flagged_fraud)\n" +
+                "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        try(Connection connection = getConnection();
+            PreparedStatement ps = connection.prepareStatement(sql)){
+
+            connection.setAutoCommit(false);
+            int batchSize = 1000;
+            int count = 0;
+
+            for(Transaction transaction : transactions){
+                mountPreparedStatement(transaction, ps);
+                ps.addBatch();
+                count++;
+
+                if (count % batchSize == 0) {
+                    ps.executeBatch();
+                    ps.clearBatch();
+                }
+            }
+
+            ps.executeBatch();
+            connection.commit();
+
+            return ps.executeUpdate() > 0;
+        }catch (SQLException e){
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void mountPreparedStatement(Transaction transaction, PreparedStatement ps) throws SQLException {
+        var i = 1;
+        ps.setInt(i++, transaction.step());
+        ps.setString(i++, transaction.type().name());
+        ps.setBigDecimal(i++, transaction.amount());
+        ps.setString(i++, transaction.origin().name());
+        ps.setBigDecimal(i++, transaction.origin().oldBalance());
+        ps.setBigDecimal(i++, transaction.origin().newBalance());
+        ps.setString(i++, transaction.recipient().name());
+        ps.setBigDecimal(i++, transaction.recipient().oldBalance());
+        ps.setBigDecimal(i++, transaction.recipient().newBalance());
+        ps.setBoolean(i++, transaction.isFraud());
+        ps.setBoolean(i++, transaction.isFlaggedFraud());
+    }
+
     private Connection getConnection() throws SQLException {
-        return DriverManager.getConnection("jdbc:mysql://localhost:3306/transactions", "root", "senha123");
+        return DriverManager.getConnection("jdbc:mysql://localhost:3306/transactions?rewriteBatchedStatements=true", "root", "senha123");
     };
 }

@@ -1,0 +1,31 @@
+package br.com.zenon.fraud.services;
+
+import br.com.zenon.fraud.mappers.TransactionMapper;
+import br.com.zenon.fraud.models.Transaction;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Consumer;
+
+public class EfficientTransactionIngestor {
+
+    public void readAsStream(String filePath, Consumer<Transaction> consumer) throws IOException {
+        readAsStream(filePath, Long.MAX_VALUE, consumer);
+    }
+
+    public void readAsStream(String filePath, long limit, Consumer<Transaction> consumer) throws IOException {
+        var path = Paths.get(filePath);
+
+        try (var lines = Files.lines(path)) {
+            lines.skip(1)
+                .limit(limit)
+                .map(TransactionMapper::mapToTransaction)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .forEach(consumer);
+        }
+    }
+}

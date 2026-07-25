@@ -1,0 +1,10 @@
+--10k individual
+Ingestion total time: 134121ms
+
+10k batches
+Ingestion total time: 6298ms
+10k batches com rewriteBatchedStatements=true
+Ingestion total time: 961ms
+
+10k com igestor com stream
+Ingestion total time: 160693ms
