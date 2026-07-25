@@ -16,12 +16,10 @@ public class IngestorMain {
         long initialTime = System.currentTimeMillis();
         IO.println("Starting ingestion...");
 
-        ingestor.readAsStream(
+        ingestor.readBatchAsStream(
                 "data/transactions.csv",
                 10_000,
-                t -> {
-                    sqlRepository.saveTransaction(t);
-                });
+                sqlRepository::saveTransactions);
 
         long finalTime = System.currentTimeMillis();
         Optional<Transaction> transaction1 = sqlRepository.getTransactionByOriginName("C1231006815");
