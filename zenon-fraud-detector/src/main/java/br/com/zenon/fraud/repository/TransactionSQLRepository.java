@@ -4,6 +4,7 @@ import br.com.zenon.fraud.interfaces.TransactionRepositoryInterface;
 import br.com.zenon.fraud.models.Transaction;
 import br.com.zenon.fraud.models.TransactionCustomer;
 import br.com.zenon.fraud.models.TransactionType;
+import br.com.zenon.fraud.util.ProgressCounter;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -13,6 +14,9 @@ import java.util.List;
 import java.util.Optional;
 
 public class TransactionSQLRepository implements TransactionRepositoryInterface {
+
+    public static final int BATCH_SIZE = 1000;
+
     @Override
     public Optional<Transaction> getTransactionByOriginName(String name) {
         var sql = "SELECT id, step, `type`, amount, name_orig, old_balance_orig, new_balance_orig, name_dest, old_balance_dest, new_balance_dest, is_fraud, is_flagged_fraud\n" +
@@ -77,7 +81,6 @@ public class TransactionSQLRepository implements TransactionRepositoryInterface 
             PreparedStatement ps = connection.prepareStatement(sql)){
 
             connection.setAutoCommit(false);
-            int batchSize = 1000;
             int count = 0;
 
             for(Transaction transaction : transactions){
@@ -85,7 +88,7 @@ public class TransactionSQLRepository implements TransactionRepositoryInterface 
                 ps.addBatch();
                 count++;
 
-                if (count % batchSize == 0) {
+                if (count % BATCH_SIZE == 0) {
                     ps.executeBatch();
                     ps.clearBatch();
                 }
@@ -93,6 +96,8 @@ public class TransactionSQLRepository implements TransactionRepositoryInterface 
 
             ps.executeBatch();
             connection.commit();
+
+            ProgressCounter.add(transactions.size());
 
             return ps.executeUpdate() > 0;
         }catch (SQLException e){

@@ -9,9 +9,12 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 public class EfficientTransactionIngestor {
+
+    public static final int LINE_BATCH_SIZE = 3_000;
 
     public void readAsStream(String filePath, Consumer<Transaction> consumer) throws IOException {
         readAsStream(filePath, Long.MAX_VALUE, consumer);
@@ -30,26 +33,31 @@ public class EfficientTransactionIngestor {
         }
     }
 
-    public void readBatchAsStream(String filePath, int batchSize, Consumer<List<Transaction>> consumer) throws IOException {
+    public void readBatchAsStream(String filePath, Consumer<List<Transaction>> consumer) throws IOException {
         var path = Paths.get(filePath);
 
-        try (var lines = Files.lines(path)) {
-            List<Transaction> buffer = new ArrayList<>(batchSize);
+        try(var executor = Executors.newFixedThreadPool(10)) {
+            try (var lines = Files.lines(path).skip(1)) {
+                var interator = lines.iterator();
 
-            lines.skip(1)
-                    .map(TransactionMapper::mapToTransaction)
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .forEach(t -> {
-                        buffer.add(t);
-                        if(buffer.size() == batchSize){
-                            consumer.accept(new ArrayList<>(buffer));
-                            buffer.clear();
-                        }
-                    });
+                List<Transaction> buffer = new ArrayList<>(LINE_BATCH_SIZE);
+                var size = 0;
 
-            if (!buffer.isEmpty()) {
-                consumer.accept(buffer);
+                while (interator.hasNext()){
+                    String line = interator.next();
+                    TransactionMapper.mapToTransaction(line).ifPresent(buffer::add);
+                    size++;
+
+                    if (buffer.size() == LINE_BATCH_SIZE) {
+                        var batch = new ArrayList<>(buffer);
+                        executor.submit(() -> consumer.accept(batch));
+                        buffer.clear();
+                    }
+                }
+
+                if (!buffer.isEmpty()) {
+                    consumer.accept(buffer);
+                }
             }
         }
     }

@@ -8,3 +8,11 @@ Ingestion total time: 961ms
 
 10k com igestor com stream
 Ingestion total time: 160693ms
+
+Total com stream em batch de 10k
+Ingestion total time: 1172601ms = 19,54335 min
+
+Total com stream e treadpool de 25 em batch de 10k
+Ingestion total time: 451432ms = 7,52386667 min
+25 5k
+Tempo total: 7 min 2 s

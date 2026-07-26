@@ -4,8 +4,10 @@ import br.com.zenon.fraud.models.Transaction;
 import br.com.zenon.fraud.repository.TransactionSQLRepository;
 import br.com.zenon.fraud.services.EfficientTransactionIngestor;
 import br.com.zenon.fraud.services.TransactionIngestor;
+import br.com.zenon.fraud.util.ProgressCounter;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Optional;
 
 public class IngestorMain {
@@ -18,14 +20,18 @@ public class IngestorMain {
 
         ingestor.readBatchAsStream(
                 "data/transactions.csv",
-                10_000,
-                sqlRepository::saveTransactions);
+                transactionList -> {
+                    boolean result = sqlRepository.saveTransactions(transactionList);
+                    if (!result)
+                        IO.println("Result falhou");
+                });
 
         long finalTime = System.currentTimeMillis();
         Optional<Transaction> transaction1 = sqlRepository.getTransactionByOriginName("C1231006815");
         Optional<Transaction> transaction2 = sqlRepository.getTransactionByOriginName("C12345");
 
-        IO.println("Ingestion total time: " + (finalTime - initialTime) + "ms");
+        Duration d = Duration.ofMillis(finalTime - initialTime);
+        IO.println(String.format("Tempo total: %d min %d s", d.toMinutes(), d.toSecondsPart()));
 
         transaction1.ifPresentOrElse(
                 IO::println,
@@ -36,6 +42,8 @@ public class IngestorMain {
                 IO::println,
                 () -> IO.println("Transaction from C12345 not found.")
         );
+
+        IO.println("Total inserts: " + ProgressCounter.get());
 
     }
 }
